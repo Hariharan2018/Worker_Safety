@@ -1,0 +1,502 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <DHT.h>
+
+// =====================================================
+//                    WIFI SETTINGS
+// =====================================================
+
+const char* ssid = "iot123456";
+const char* password = "iot123456";
+
+// =====================================================
+//                 BACKEND API
+// =====================================================
+
+const char* serverURL =
+  "http://10.22.207.54:5000/api/sensors";
+
+// =====================================================
+//                    WORKER
+// =====================================================
+
+const char* workerId = "W001";
+
+// =====================================================
+//                    SENSOR PINS
+// =====================================================
+
+#define MQ5_PIN A0
+#define MQ135_PIN D5
+
+#define DHT_PIN D4
+#define DHT_TYPE DHT11
+
+DHT dht(DHT_PIN, DHT_TYPE);
+
+// =====================================================
+//                    OLED SETTINGS
+// =====================================================
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+
+Adafruit_SSD1306 display(
+  SCREEN_WIDTH,
+  SCREEN_HEIGHT,
+  &Wire,
+  OLED_RESET
+);
+
+// =====================================================
+//                     SETUP
+// =====================================================
+
+void setup()
+{
+  Serial.begin(115200);
+
+  delay(1000);
+
+  Serial.println();
+  Serial.println("======================================");
+  Serial.println("        SAFETYWATCH PRO");
+  Serial.println("        ESP8266 SENSOR UNIT");
+  Serial.println("======================================");
+
+  // ===================================================
+  // SENSOR INITIALIZATION
+  // ===================================================
+
+  pinMode(MQ5_PIN, INPUT);
+  pinMode(MQ135_PIN, INPUT);
+
+  dht.begin();
+
+  // ===================================================
+  // OLED INITIALIZATION
+  // SDA = GPIO4
+  // SCL = GPIO5
+  // ===================================================
+
+  Wire.begin(4, 5);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+  {
+    Serial.println("OLED not found!");
+
+    while (true)
+    {
+      delay(1000);
+    }
+  }
+
+  Serial.println("OLED found!");
+
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+
+  display.setTextSize(2);
+  display.setCursor(10, 10);
+  display.println("SAFETY");
+
+  display.setTextSize(1);
+  display.setCursor(25, 40);
+  display.println("ESP8266 OK");
+
+  display.display();
+
+  delay(2000);
+
+  // ===================================================
+  // WIFI
+  // ===================================================
+
+  Serial.println();
+  Serial.print("Connecting to Wi-Fi: ");
+  Serial.println(ssid);
+
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.setTextSize(1);
+
+  display.setCursor(0, 0);
+  display.println("SafetyWatch Pro");
+
+  display.setCursor(0, 20);
+  display.println("Connecting WiFi...");
+
+  display.display();
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("Wi-Fi Connected!");
+
+  Serial.print("ESP8266 IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  Serial.println();
+  Serial.println("Backend:");
+  Serial.println(serverURL);
+
+  display.clearDisplay();
+
+  display.setTextSize(1);
+
+  display.setCursor(0, 0);
+  display.println("WiFi Connected");
+
+  display.setCursor(0, 18);
+  display.print("IP:");
+
+  display.println(WiFi.localIP());
+
+  display.setCursor(0, 38);
+  display.println("Worker: W001");
+
+  display.display();
+
+  delay(2000);
+
+  Serial.println();
+  Serial.println("System Ready");
+  Serial.println("======================================");
+}
+
+// =====================================================
+//                     LOOP
+// =====================================================
+
+void loop()
+{
+  // ===================================================
+  // READ MQ-5
+  // ===================================================
+
+  int mq5Value = analogRead(MQ5_PIN);
+
+  // ===================================================
+  // READ MQ-135
+  // ===================================================
+
+  int mq135Value = digitalRead(MQ135_PIN);
+
+  // ===================================================
+  // READ DHT11
+  // ===================================================
+
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+
+  // ===================================================
+  // CHECK DHT11
+  // ===================================================
+
+  if (isnan(temperature) || isnan(humidity))
+  {
+    Serial.println();
+    Serial.println("ERROR: DHT11 sensor reading failed!");
+
+    display.clearDisplay();
+
+    display.setTextSize(1);
+
+    display.setCursor(0, 0);
+    display.println("SafetyWatch Pro");
+
+    display.setCursor(0, 20);
+    display.println("DHT11 ERROR");
+
+    display.setCursor(0, 40);
+    display.println("Check sensor");
+
+    display.display();
+
+    delay(2000);
+
+    return;
+  }
+
+  // ===================================================
+  // SERIAL DISPLAY
+  // ===================================================
+
+  Serial.println();
+  Serial.println("--------------------------------------");
+
+  Serial.print("Worker ID   : ");
+  Serial.println(workerId);
+
+  Serial.print("MQ5         : ");
+  Serial.println(mq5Value);
+
+  Serial.print("MQ135       : ");
+
+  if (mq135Value == HIGH)
+  {
+    Serial.println("Normal");
+  }
+  else
+  {
+    Serial.println("Detected");
+  }
+
+  Serial.print("Temperature : ");
+  Serial.print(temperature, 1);
+  Serial.println(" °C");
+
+  Serial.print("Humidity    : ");
+  Serial.print(humidity, 1);
+  Serial.println(" %");
+
+  // ===================================================
+  // OLED LIVE SENSOR DISPLAY
+  // ===================================================
+
+  display.clearDisplay();
+
+  display.setTextColor(SSD1306_WHITE);
+
+  display.setTextSize(1);
+
+  display.setCursor(0, 0);
+  display.println("SafetyWatch Pro");
+
+  display.setCursor(0, 10);
+  display.print("Worker: ");
+  display.println(workerId);
+
+  display.setCursor(0, 22);
+  display.print("MQ5: ");
+  display.print(mq5Value);
+  display.println(" ppm");
+
+  display.setCursor(0, 32);
+  display.print("MQ135: ");
+
+  if (mq135Value == HIGH)
+  {
+    display.println("Normal");
+  }
+  else
+  {
+    display.println("Detected");
+  }
+
+  display.setCursor(0, 42);
+  display.print("Temp: ");
+  display.print(temperature, 1);
+  display.println(" C");
+
+  display.setCursor(0, 52);
+  display.print("Hum: ");
+  display.print(humidity, 1);
+  display.println(" %");
+
+  display.display();
+
+  // ===================================================
+  // CHECK WIFI
+  // ===================================================
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    Serial.println();
+    Serial.println("Sending data to backend...");
+
+    WiFiClient client;
+    HTTPClient http;
+
+    // =================================================
+    // START HTTP CONNECTION
+    // =================================================
+
+    if (http.begin(client, serverURL))
+    {
+      http.addHeader("Content-Type", "application/json");
+
+      // =================================================
+      // CREATE JSON
+      // =================================================
+
+      String jsonData = "{";
+
+      jsonData += "\"workerId\":\"";
+      jsonData += workerId;
+      jsonData += "\",";
+
+      jsonData += "\"mq5\":";
+      jsonData += mq5Value;
+      jsonData += ",";
+
+      jsonData += "\"mq135\":";
+      jsonData += mq135Value;
+      jsonData += ",";
+
+      jsonData += "\"temperature\":";
+      jsonData += String(temperature, 1);
+      jsonData += ",";
+
+      jsonData += "\"humidity\":";
+      jsonData += String(humidity, 1);
+
+      jsonData += "}";
+
+      // =================================================
+      // PRINT JSON
+      // =================================================
+
+      Serial.print("JSON: ");
+      Serial.println(jsonData);
+
+      // =================================================
+      // SEND POST
+      // =================================================
+
+      int httpResponseCode =
+        http.POST(jsonData);
+
+      // =================================================
+      // RESPONSE
+      // =================================================
+
+      Serial.print("HTTP Response: ");
+      Serial.println(httpResponseCode);
+
+      if (httpResponseCode > 0)
+      {
+        String response =
+          http.getString();
+
+        Serial.print("Backend Response: ");
+        Serial.println(response);
+
+        Serial.println("Data sent successfully!");
+
+        // OLED backend status
+        display.clearDisplay();
+
+        display.setTextSize(1);
+
+        display.setCursor(0, 0);
+        display.println("SafetyWatch Pro");
+
+        display.setCursor(0, 12);
+        display.println("Data Sent");
+
+        display.setCursor(0, 24);
+        display.print("MQ5: ");
+        display.println(mq5Value);
+
+        display.setCursor(0, 34);
+        display.print("MQ135: ");
+
+        if (mq135Value == HIGH)
+          display.println("Normal");
+        else
+          display.println("Detected");
+
+        display.setCursor(0, 44);
+        display.print("T:");
+        display.print(temperature, 1);
+        display.print("C H:");
+        display.print(humidity, 1);
+        display.println("%");
+
+        display.setCursor(0, 55);
+        display.println("Server: OK");
+
+        display.display();
+      }
+      else
+      {
+        Serial.print("HTTP Error: ");
+        Serial.println(
+          http.errorToString(httpResponseCode)
+        );
+
+        display.clearDisplay();
+
+        display.setTextSize(1);
+
+        display.setCursor(0, 0);
+        display.println("SafetyWatch Pro");
+
+        display.setCursor(0, 20);
+        display.println("Server Error");
+
+        display.setCursor(0, 35);
+        display.print("HTTP: ");
+        display.println(httpResponseCode);
+
+        display.display();
+      }
+
+      // =================================================
+      // CLOSE HTTP
+      // =================================================
+
+      http.end();
+    }
+    else
+    {
+      Serial.println(
+        "ERROR: Cannot connect to backend!"
+      );
+
+      display.clearDisplay();
+
+      display.setTextSize(1);
+
+      display.setCursor(0, 0);
+      display.println("SafetyWatch Pro");
+
+      display.setCursor(0, 20);
+      display.println("Backend Error");
+
+      display.setCursor(0, 35);
+      display.println("Cannot connect");
+
+      display.display();
+    }
+  }
+  else
+  {
+    Serial.println();
+    Serial.println("Wi-Fi disconnected!");
+
+    display.clearDisplay();
+
+    display.setTextSize(1);
+
+    display.setCursor(0, 0);
+    display.println("SafetyWatch Pro");
+
+    display.setCursor(0, 20);
+    display.println("WiFi Disconnected");
+
+    display.setCursor(0, 40);
+    display.println("Reconnecting...");
+
+    display.display();
+
+    WiFi.reconnect();
+  }
+
+  // ===================================================
+  // WAIT 2 SECONDS
+  // ===================================================
+
+  delay(2000);
+}
