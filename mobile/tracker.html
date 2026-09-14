@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SafetyWatch Pro - Worker Tracking</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* ================= HEADER ================= */
+
+        .header {
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 23px;
+        }
+
+        .header p {
+            margin: 6px 0 0;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        /* ================= CONTAINER ================= */
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+            padding: 15px;
+        }
+
+        /* ================= STATUS ================= */
+
+        .status-card {
+            background: white;
+            border-radius: 14px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .online {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        .offline {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        /* ================= CARD ================= */
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        /* ================= WORKER ================= */
+
+        .worker-id {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .worker-name {
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        /* ================= SENSOR ================= */
+
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .sensor {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .sensor-name {
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .sensor-value {
+            font-size: 23px;
+            font-weight: bold;
+        }
+
+        .sensor-unit {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* ================= GPS ================= */
+
+        .gps-card {
+            background: #f0fdf4;
+            border: 2px solid #22c55e;
+        }
+
+        .gps-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #bbf7d0;
+        }
+
+        .gps-label {
+            color: #64748b;
+        }
+
+        .gps-value {
+            font-weight: bold;
+        }
+
+        .gps-status {
+            margin-top: 12px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .accuracy {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        /* ================= BATTERY ================= */
+
+        .battery-bar {
+            width: 100%;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .battery-fill {
+            height: 100%;
+            width: 95%;
+            background: #22c55e;
+            border-radius: 20px;
+            transition: width 0.3s;
+        }
+
+        /* ================= BUTTON ================= */
+
+        .refresh-button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .gps-button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: #16a34a;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* ================= FOOTER ================= */
+
+        .footer {
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+            padding: 10px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+                         HEADER
+===================================================== -->
+
+<div class="header">
+
+    <h1>🛡 SafetyWatch Pro</h1>
+
+    <p>
+        Industrial Worker Safety Monitoring
+    </p>
+
+</div>
+
+
+<div class="container">
+
+
+<!-- =====================================================
+                     SERVER STATUS
+===================================================== -->
+
+<div class="status-card">
+
+    <span>
+        Backend Connection
+    </span>
+
+    <span id="serverStatus" class="offline">
+        ● Checking...
+    </span>
+
+</div>
+
+
+<!-- =====================================================
+                     WORKER
+===================================================== -->
+
+<div class="card">
+
+    <div class="card-title">
+        👷 Worker Information
+    </div>
+
+    <div class="worker-id" id="workerId">
+        W001
+    </div>
+
+    <div class="worker-name">
+        Active Worker
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+                     SENSOR DATA
+===================================================== -->
+
+<div class="card">
+
+    <div class="card-title">
+        🌡 Live Safety Sensors
+    </div>
+
+
+    <div class="sensor-grid">
+
+
+        <!-- MQ5 -->
+
+        <div class="sensor">
+
+            <div class="sensor-name">
+                🔥 MQ5 Gas
+            </div>
+
+            <div class="sensor-value" id="mq5">
+                --
+            </div>
+
+            <div class="sensor-unit">
+                Gas Sensor Value
+            </div>
+
+        </div>
+
+
+        <!-- MQ135 -->
+
+        <div class="sensor">
+
+            <div class="sensor-name">
+                🌫 MQ135 Air Quality
+            </div>
+
+            <div class="sensor-value" id="mq135">
+                --
+            </div>
+
+            <div class="sensor-unit">
+                Air Quality Status
+            </div>
+
+        </div>
+
+
+        <!-- Temperature -->
+
+        <div class="sensor">
+
+            <div class="sensor-name">
+                🌡 Temperature
+            </div>
+
+            <div class="sensor-value" id="temperature">
+                --
+            </div>
+
+            <div class="sensor-unit">
+                °C
+            </div>
+
+        </div>
+
+
+        <!-- Humidity -->
+
+        <div class="sensor">
+
+            <div class="sensor-name">
+                💧 Humidity
+            </div>
+
+            <div class="sensor-value" id="humidity">
+                --
+            </div>
+
+            <div class="sensor-unit">
+                %
+            </div>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+                     REAL GPS
+===================================================== -->
+
+<div class="card gps-card">
+
+    <div class="card-title">
+        📍 Real-Time Worker Location
+    </div>
+
+
+    <div class="gps-row">
+
+        <span class="gps-label">
+            Latitude
+        </span>
+
+        <span class="gps-value" id="latitude">
+            --
+        </span>
+
+    </div>
+
+
+    <div class="gps-row">
+
+        <span class="gps-label">
+            Longitude
+        </span>
+
+        <span class="gps-value" id="longitude">
+            --
+        </span>
+
+    </div>
+
+
+    <div class="gps-status" id="gpsStatus">
+        🟡 GPS not started
+    </div>
+
+
+    <div class="accuracy" id="accuracy">
+        GPS Accuracy: --
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+                     BATTERY
+===================================================== -->
+
+<div class="card">
+
+    <div class="card-title">
+        🔋 Worker Device Battery
+    </div>
+
+    <strong id="batteryText">
+        95%
+    </strong>
+
+    <div class="battery-bar">
+
+        <div
+            class="battery-fill"
+            id="batteryFill">
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+                     BUTTONS
+===================================================== -->
+
+<button
+    class="gps-button"
+    onclick="startRealGPS()">
+
+    📍 Start Real GPS
+
+</button>
+
+
+<br>
+
+
+<button
+    class="refresh-button"
+    onclick="getWorkerData()">
+
+    🔄 Refresh Sensor Data
+
+</button>
+
+
+<div class="footer">
+
+    SafetyWatch Pro • Worker Safety System
+
+</div>
+
+
+</div>
+
+
+<script>
+
+
+// =====================================================
+// BACKEND URL
+// =====================================================
+
+const BACKEND =
+    "http://10.22.207.54:5000";
+
+
+// =====================================================
+// WORKER ID
+// =====================================================
+
+const workerId =
+    localStorage.getItem("workerId") || "W001";
+
+
+document
+    .getElementById("workerId")
+    .textContent = workerId;
+
+
+// =====================================================
+// GET SENSOR DATA
+// =====================================================
+
+async function getWorkerData() {
+
+    try {
+
+        const response =
+            await fetch(
+                BACKEND + "/api/worker"
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Backend unavailable"
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        // ================= SERVER =================
+
+        document
+            .getElementById("serverStatus")
+            .textContent =
+            "● Online";
+
+        document
+            .getElementById("serverStatus")
+            .className =
+            "online";
+
+
+        // ================= WORKER =================
+
+        document
+            .getElementById("workerId")
+            .textContent =
+            data.workerId || workerId;
+
+
+        // ================= MQ5 =================
+
+        document
+            .getElementById("mq5")
+            .textContent =
+            data.mq5 ?? "--";
+
+
+        // ================= MQ135 =================
+
+        if (
+            Number(data.mq135) === 1
+        ) {
+
+            document
+                .getElementById("mq135")
+                .textContent =
+                "Normal";
+
+        }
+
+        else {
+
+            document
+                .getElementById("mq135")
+                .textContent =
+                "Detected";
+
+        }
+
+
+        // ================= TEMPERATURE =================
+
+        document
+            .getElementById("temperature")
+            .textContent =
+            data.temperature != null
+                ? Number(
+                    data.temperature
+                ).toFixed(1)
+                : "--";
+
+
+        // ================= HUMIDITY =================
+
+        document
+            .getElementById("humidity")
+            .textContent =
+            data.humidity != null
+                ? Number(
+                    data.humidity
+                ).toFixed(1)
+                : "--";
+
+
+        // ================= GPS FROM SERVER =================
+
+        if (
+            data.latitude != null &&
+            data.longitude != null &&
+            Number(data.latitude) !== 0 &&
+            Number(data.longitude) !== 0
+        ) {
+
+            document
+                .getElementById("latitude")
+                .textContent =
+                Number(
+                    data.latitude
+                ).toFixed(6);
+
+
+            document
+                .getElementById("longitude")
+                .textContent =
+                Number(
+                    data.longitude
+                ).toFixed(6);
+
+        }
+
+
+        // ================= BATTERY =================
+
+        if (
+            data.battery != null
+        ) {
+
+            document
+                .getElementById("batteryText")
+                .textContent =
+                data.battery + "%";
+
+
+            document
+                .getElementById("batteryFill")
+                .style.width =
+                data.battery + "%";
+
+        }
+
+
+        console.log(
+            "Worker Data:",
+            data
+        );
+
+    }
+
+
+    catch (error) {
+
+        console.error(
+            "Backend Error:",
+            error
+        );
+
+
+        document
+            .getElementById("serverStatus")
+            .textContent =
+            "● Offline";
+
+
+        document
+            .getElementById("serverStatus")
+            .className =
+            "offline";
+
+    }
+
+}
+
+
+// =====================================================
+// REAL PHONE GPS
+// =====================================================
+
+let gpsWatchId = null;
+
+
+function startRealGPS() {
+
+
+    const status =
+        document.getElementById(
+            "gpsStatus"
+        );
+
+
+    // ================= CHECK GPS SUPPORT =================
+
+    if (
+        !navigator.geolocation
+    ) {
+
+        status.innerHTML =
+            "🔴 GPS not supported by browser";
+
+        return;
+
+    }
+
+
+    status.innerHTML =
+        "🟡 Requesting location permission...";
+
+
+    console.log(
+        "Requesting real GPS..."
+    );
+
+
+    // =====================================================
+    // STOP PREVIOUS GPS WATCH
+    // =====================================================
+
+    if (
+        gpsWatchId !== null
+    ) {
+
+        navigator
+            .geolocation
+            .clearWatch(
+                gpsWatchId
+            );
+
+    }
+
+
+    // =====================================================
+    // START REAL GPS
+    // =====================================================
+
+    gpsWatchId =
+        navigator.geolocation.watchPosition(
+
+            async function(position) {
+
+
+                // ================= REAL GPS =================
+
+                const latitude =
+                    position.coords.latitude;
+
+
+                const longitude =
+                    position.coords.longitude;
+
+
+                const accuracy =
+                    position.coords.accuracy;
+
+
+                console.log(
+                    "REAL GPS:",
+                    latitude,
+                    longitude,
+                    accuracy
+                );
+
+
+                // ================= DISPLAY =================
+
+                document
+                    .getElementById("latitude")
+                    .textContent =
+                    latitude.toFixed(6);
+
+
+                document
+                    .getElementById("longitude")
+                    .textContent =
+                    longitude.toFixed(6);
+
+
+                document
+                    .getElementById("accuracy")
+                    .textContent =
+                    "GPS Accuracy: " +
+                    Math.round(
+                        accuracy
+                    ) +
+                    " meters";
+
+
+                document
+                    .getElementById("gpsStatus")
+                    .innerHTML =
+                    "🟢 Real GPS Active";
+
+
+                // =====================================================
+                // SEND GPS TO LAPTOP BACKEND
+                // =====================================================
+
+                try {
+
+                    const response =
+                        await fetch(
+
+                            BACKEND +
+                            "/api/location",
+
+                            {
+
+                                method:
+                                    "POST",
+
+                                headers: {
+
+                                    "Content-Type":
+                                        "application/json"
+
+                                },
+
+                                body:
+                                    JSON.stringify({
+
+                                        workerId:
+                                            workerId,
+
+                                        latitude:
+                                            latitude,
+
+                                        longitude:
+                                            longitude,
+
+                                        battery:
+                                            95
+
+                                    })
+
+                            }
+
+                        );
+
+
+                    if (
+                        !response.ok
+                    ) {
+
+                        throw new Error(
+                            "Backend location error"
+                        );
+
+                    }
+
+
+                    const result =
+                        await response.json();
+
+
+                    console.log(
+                        "GPS sent to backend:",
+                        result
+                    );
+
+                }
+
+
+                catch (error) {
+
+                    console.error(
+                        "GPS Send Error:",
+                        error
+                    );
+
+
+                    document
+                        .getElementById(
+                            "gpsStatus"
+                        )
+                        .innerHTML =
+                        "🟠 GPS obtained, server unavailable";
+
+                }
+
+            },
+
+
+            // =====================================================
+            // GPS ERROR
+            // =====================================================
+
+            function(error) {
+
+                console.error(
+                    "GPS ERROR:",
+                    error
+                );
+
+
+                const status =
+                    document.getElementById(
+                        "gpsStatus"
+                    );
+
+
+                if (
+                    error.code === 1
+                ) {
+
+                    status.innerHTML =
+                        "🔴 Location permission denied";
+
+                }
+
+                else if (
+                    error.code === 2
+                ) {
+
+                    status.innerHTML =
+                        "🔴 Location unavailable";
+
+                }
+
+                else if (
+                    error.code === 3
+                ) {
+
+                    status.innerHTML =
+                        "🔴 GPS request timeout";
+
+                }
+
+                else {
+
+                    status.innerHTML =
+                        "🔴 Unknown GPS error";
+
+                }
+
+            },
+
+
+            // =====================================================
+            // GPS OPTIONS
+            // =====================================================
+
+            {
+
+                enableHighAccuracy:
+                    true,
+
+                maximumAge:
+                    0,
+
+                timeout:
+                    30000
+
+            }
+
+        );
+
+}
+
+
+// =====================================================
+// INITIAL LOAD
+// =====================================================
+
+getWorkerData();
+
+
+// =====================================================
+// SENSOR UPDATE
+// =====================================================
+
+setInterval(
+    getWorkerData,
+    2000
+);
+
+</script>
+
+
+</body>
+
+</html>

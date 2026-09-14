@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SafetyWatch Pro</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#f4f7fb;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.card{
+width:340px;
+background:white;
+padding:30px;
+border-radius:12px;
+box-shadow:0 10px 30px rgba(0,0,0,.15);
+}
+
+h2{
+text-align:center;
+color:#2563eb;
+margin-bottom:25px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-bottom:15px;
+border:1px solid #ccc;
+border-radius:8px;
+font-size:16px;
+}
+
+button{
+width:100%;
+padding:12px;
+background:#2563eb;
+color:white;
+border:none;
+border-radius:8px;
+font-size:16px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>SafetyWatch Pro</h2>
+
+<input id="workerId" placeholder="Worker ID">
+
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()">LOGIN</button>
+
+</div>
+
+<script>
+
+function login(){
+
+const id=document.getElementById("workerId").value;
+const pass=document.getElementById("password").value;
+
+if(id=="W001" && pass=="1234"){
+
+localStorage.setItem("workerId",id);
+
+location.href="tracker.html";
+
+}
+else{
+
+alert("Invalid Login");
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
